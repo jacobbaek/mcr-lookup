@@ -4,6 +4,7 @@ import requests
 import json
 
 BASE = "https://mcr.microsoft.com/v2"
+TIMEOUT = 10
 
 
 def print_table(headers, rows):
@@ -20,7 +21,7 @@ def print_table(headers, rows):
 
 
 def catalog(table=False):
-    r = requests.get(f"{BASE}/_catalog")
+    r = requests.get(f"{BASE}/_catalog", timeout=TIMEOUT)
 
     if r.status_code != 200:
         print("❌ MCR does NOT allow full catalog listing via API")
@@ -36,7 +37,7 @@ def catalog(table=False):
 
 
 def tags(repo, table=False):
-    data = requests.get(f"{BASE}/{repo}/tags/list").json()
+    data = requests.get(f"{BASE}/{repo}/tags/list", timeout=TIMEOUT).json()
 
     if table:
         rows = [[t] for t in data.get("tags", [])]
@@ -55,7 +56,7 @@ def get_image_manifest(repo, tag):
         ])
     }
 
-    r = requests.get(f"{BASE}/{repo}/manifests/{tag}", headers=headers)
+    r = requests.get(f"{BASE}/{repo}/manifests/{tag}", headers=headers, timeout=TIMEOUT)
 
     if r.status_code != 200:
         print(f"❌ manifest fetch failed: {r.status_code}")
@@ -71,7 +72,8 @@ def get_image_manifest(repo, tag):
 
                 r2 = requests.get(
                     f"{BASE}/{repo}/manifests/{digest}",
-                    headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
+                    headers={"Accept": "application/vnd.docker.distribution.manifest.v2+json"},
+                    timeout=TIMEOUT
                 )
 
                 if r2.status_code != 200:
@@ -96,7 +98,7 @@ def manifest(repo, tag, table=False):
         ])
     }
 
-    r = requests.get(f"{BASE}/{repo}/manifests/{tag}", headers=headers)
+    r = requests.get(f"{BASE}/{repo}/manifests/{tag}", headers=headers, timeout=TIMEOUT)
 
     if not table:
         print(json.dumps(r.json(), indent=2))
@@ -140,7 +142,7 @@ def created(repo, tag, table=False):
         print("❌ config digest not found")
         return
 
-    blob_resp = requests.get(f"{BASE}/{repo}/blobs/{config_digest}")
+    blob_resp = requests.get(f"{BASE}/{repo}/blobs/{config_digest}", timeout=TIMEOUT)
 
     if blob_resp.status_code != 200:
         print(f"❌ blob fetch failed: {blob_resp.status_code}")
