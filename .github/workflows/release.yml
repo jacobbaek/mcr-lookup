@@ -16,11 +16,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: mcr-lookup-linux-amd64
+            artifact_name: mcrlookup-linux-amd64
           - os: macos-latest
-            artifact_name: mcr-lookup-darwin-arm64
+            artifact_name: mcrlookup-darwin-arm64
           - os: windows-latest
-            artifact_name: mcr-lookup-windows-amd64.exe
+            artifact_name: mcrlookup-windows-amd64.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -41,12 +41,12 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
-          pyinstaller --onefile -n mcr-lookup tool.py
+          pyinstaller --onefile -n mcrlookup mcrlookup.py
           mkdir -p release
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            cp dist/mcr-lookup.exe release/${{ matrix.artifact_name }}
+            cp dist/mcrlookup.exe release/${{ matrix.artifact_name }}
           else
-            cp dist/mcr-lookup release/${{ matrix.artifact_name }}
+            cp dist/mcrlookup release/${{ matrix.artifact_name }}
           fi
 
       - name: Upload artifact
