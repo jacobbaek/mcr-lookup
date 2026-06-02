@@ -1,0 +1,74 @@
+name: Release binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: mcr-lookup-linux-amd64
+          - os: macos-latest
+            artifact_name: mcr-lookup-darwin-arm64
+          - os: windows-latest
+            artifact_name: mcr-lookup-windows-amd64.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller requests
+
+      - name: Build binary
+        shell: bash
+        run: |
+          pyinstaller --onefile -n mcr-lookup tool.py
+          mkdir -p release
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            cp dist/mcr-lookup.exe release/${{ matrix.artifact_name }}
+          else
+            cp dist/mcr-lookup release/${{ matrix.artifact_name }}
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release/${{ matrix.artifact_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist-assets
+          merge-multiple: true
+
+      - name: Create GitHub release and upload binaries
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist-assets/*             --repo "$GITHUB_REPOSITORY"             --title "$GITHUB_REF_NAME"             --generate-notes
+
