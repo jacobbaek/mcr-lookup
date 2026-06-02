@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-20.04
             artifact_name: mcrlookup-linux-amd64
           - os: macos-latest
             artifact_name: mcrlookup-darwin-arm64
