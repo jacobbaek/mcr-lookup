@@ -37,7 +37,17 @@ def catalog(table=False):
 
 
 def tags(repo, table=False):
-    data = requests.get(f"{BASE}/{repo}/tags/list", timeout=TIMEOUT).json()
+    r = requests.get(f"{BASE}/{repo}/tags/list", timeout=TIMEOUT)
+
+    if r.status_code == 404:
+        print(f"❌ repository not found: {repo}")
+        return
+
+    if r.status_code != 200:
+        print(f"❌ tags fetch failed: {r.status_code}")
+        return
+
+    data = r.json()
 
     if table:
         rows = [[t] for t in data.get("tags", [])]
@@ -57,6 +67,10 @@ def get_image_manifest(repo, tag):
     }
 
     r = requests.get(f"{BASE}/{repo}/manifests/{tag}", headers=headers, timeout=TIMEOUT)
+
+    if r.status_code == 404:
+        print(f"❌ manifest not found: {repo}:{tag}")
+        return None
 
     if r.status_code != 200:
         print(f"❌ manifest fetch failed: {r.status_code}")
@@ -99,6 +113,14 @@ def manifest(repo, tag, table=False):
     }
 
     r = requests.get(f"{BASE}/{repo}/manifests/{tag}", headers=headers, timeout=TIMEOUT)
+
+    if r.status_code == 404:
+        print(f"❌ manifest not found: {repo}:{tag}")
+        return
+
+    if r.status_code != 200:
+        print(f"❌ manifest fetch failed: {r.status_code}")
+        return
 
     if not table:
         print(json.dumps(r.json(), indent=2))
